@@ -1,0 +1,111 @@
+[
+  {
+    "type": "PBQ - Classification/Matching",
+    "scenario": "PBQ Instructions: Match the description with the most accurate attack type. Not all attack types will be used.",
+    "question": "PBQ: Classification/Matching",
+    "options": [
+      "Start PBQ Exercise"
+    ],
+    "correct_answer": "{\"0\": \"Vishing\", \"1\": \"Injection\", \"2\": \"On-path\", \"3\": \"DDoS\", \"4\": \"Keylogger\"}",
+    "explanation": "Performance-based question exercise",
+    "is_pbq": true,
+    "pbq_data": {
+      "instructions": "Match the description with the most accurate attack type. Not all attack types will be used.",
+      "scenario_image_type": null,
+      "matching_items": [
+        "Attacker obtains bank account number and birth date by calling the victim",
+        "Attacker accesses a database directly from a web browser",
+        "Attacker intercepts all communication between a client and a web server",
+        "Multiple attackers overwhelm a web server",
+        "Attacker obtains a list of all login credentials used over the last 24 hours"
+      ],
+      "all_options": [
+        "On-path",
+        "Keylogger",
+        "Rootkit",
+        "Injection",
+        "RFID cloning",
+        "Vishing",
+        "DDoS",
+        "Supply chain"
+      ],
+      "correct_answers": {
+        "0": "Vishing",
+        "1": "Injection",
+        "2": "On-path",
+        "3": "DDoS",
+        "4": "Keylogger"
+      },
+      "question_type": "Single Select",
+      "is_multi_select": false
+    },
+    "is_multi_select": false,
+    "scenario_image_filename": null,
+    "scenario_image_type": null,
+    "has_scenario_image": false
+  },
+  {
+    "type": "PBQ - Firewall Rules",
+    "scenario": "PBQ Instructions: Configure the firewall rules according to the network diagram. Select the appropriate values for each rule.",
+    "question": "PBQ: Firewall Rules",
+    "options": [
+      "Start PBQ Exercise"
+    ],
+    "correct_answer": "{\"0_rule\": \"1\", \"0_source_ip\": \"10.1.1.2\", \"0_dest_ip\": \"10.1.1.3\", \"0_protocol\": \"TCP\", \"0_port\": \"22\", \"0_action\": \"Allow\"}",
+    "explanation": "Performance-based question exercise",
+    "is_pbq": true,
+    "pbq_data": {
+      "instructions": "Configure the firewall rules according to the network diagram. Select the appropriate values for each rule.",
+      "scenario_image_type": null,
+      "firewall_rules": [
+        {
+          "rule_options": [
+            "1",
+            "2",
+            "3"
+          ],
+          "source_ip_options": [
+            "10.1.1.2",
+            "10.2.1.33",
+            "10.2.1.47"
+          ],
+          "dest_ip_options": [
+            "10.1.1.3",
+            "10.1.1.7",
+            "10.2.1.20"
+          ],
+          "protocol_options": [
+            "TCP",
+            "UDP"
+          ],
+          "port_options": [
+            "22",
+            "80",
+            "443"
+          ],
+          "action_options": [
+            "Allow",
+            "Block"
+          ],
+          "correct_rule": "1",
+          "correct_source_ip": "10.1.1.2",
+          "correct_dest_ip": "10.1.1.3",
+          "correct_protocol": "TCP",
+          "correct_port": "22",
+          "correct_action": "Allow"
+        }
+      ],
+      "correct_answers": {
+        "0_rule": "1",
+        "0_source_ip": "10.1.1.2",
+        "0_dest_ip": "10.1.1.3",
+        "0_protocol": "TCP",
+        "0_port": "22",
+        "0_action": "Allow"
+      }
+    },
+    "scenario_image_filename": null,
+    "scenario_image_type": null,
+    "has_scenario_image": false
+  }
+]
