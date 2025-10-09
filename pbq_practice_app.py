@@ -13,8 +13,8 @@ SHOW_BUILDER = True
 
 # Page configuration
 st.set_page_config(
-    page_title="Yoshi, ikou!",
-    page_icon="🛸",
+    page_title="PBQ Practice App",
+    page_icon="📚",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -290,12 +290,22 @@ def calculate_detailed_results():
                 if pbq_type == "Classification/Matching":
                     # Classification scoring
                     matching_items = question.get('pbq_data', {}).get('matching_items', [])
+                    is_multi_select = question.get('pbq_data', {}).get('is_multi_select', False)
                     correct_items = 0
                     
                     for idx, item_text in enumerate(matching_items):
-                        user_val = user_answer.get(str(idx), "") if user_answer else ""
-                        correct_val = correct_answers.get(str(idx), "")
-                        is_correct = user_val == correct_val
+                        user_val = user_answer.get(str(idx), [] if is_multi_select else "") if user_answer else ([] if is_multi_select else "")
+                        correct_val = correct_answers.get(str(idx), [] if is_multi_select else "")
+                        
+                        # Handle multi-select comparison
+                        if is_multi_select:
+                            if not isinstance(user_val, list):
+                                user_val = [user_val] if user_val else []
+                            if not isinstance(correct_val, list):
+                                correct_val = [correct_val] if correct_val else []
+                            is_correct = set(user_val) == set(correct_val)
+                        else:
+                            is_correct = user_val == correct_val
                         
                         if is_correct:
                             correct_items += 1
@@ -305,7 +315,8 @@ def calculate_detailed_results():
                             'description': item_text,
                             'user_answer': user_val,
                             'correct_answer': correct_val,
-                            'is_correct': is_correct
+                            'is_correct': is_correct,
+                            'is_multi_select': is_multi_select
                         })
                     
                     result['score'] = correct_items
@@ -528,6 +539,7 @@ def display_matching_pbq(question):
     """Display matching PBQ"""
     pbq_data = question.get('pbq_data', {})
     current_index = st.session_state.current_question_index
+    is_multi_select = pbq_data.get('is_multi_select', False)
     
     # Display scenario image if available
     image_filename = question.get('scenario_image_filename')
@@ -562,23 +574,56 @@ def display_matching_pbq(question):
     
     st.markdown("### Items to Match")
     
+    if is_multi_select:
+        st.caption("💡 Select all that apply for each item")
+    
     for i, item in enumerate(matching_items):
         with st.container():
             st.markdown(f"**{i+1}.** {item}")
             
-            current_answer = user_answers.get(str(i), "")
-            
-            selected_answer = st.selectbox(
-                f"Select match",
-                [""] + display_options,
-                index=0 if not current_answer else ([""] + display_options).index(current_answer) if current_answer in display_options else 0,
-                key=f"match_q{current_index}_item{i}",
-                label_visibility="collapsed"
-            )
-            
-            if selected_answer != current_answer:
-                user_answers[str(i)] = selected_answer
-                answer_changed = True
+            if is_multi_select:
+                # Multi-select with checkboxes
+                current_answers = user_answers.get(str(i), [])
+                if not isinstance(current_answers, list):
+                    current_answers = [current_answers] if current_answers else []
+                
+                selected_options = []
+                
+                # Display checkboxes in columns for better layout
+                cols = st.columns(min(3, len(display_options)))
+                for idx, opt in enumerate(display_options):
+                    col_idx = idx % len(cols)
+                    with cols[col_idx]:
+                        is_checked = st.checkbox(
+                            opt,
+                            value=opt in current_answers,
+                            key=f"match_multi_q{current_index}_item{i}_{idx}"
+                        )
+                        if is_checked:
+                            selected_options.append(opt)
+                
+                if set(selected_options) != set(current_answers):
+                    user_answers[str(i)] = selected_options
+                    answer_changed = True
+                
+                if selected_options:
+                    st.success(f"✓ Selected: {', '.join(selected_options)}")
+                
+            else:
+                # Single select dropdown
+                current_answer = user_answers.get(str(i), "")
+                
+                selected_answer = st.selectbox(
+                    f"Select match",
+                    [""] + display_options,
+                    index=0 if not current_answer else ([""] + display_options).index(current_answer) if current_answer in display_options else 0,
+                    key=f"match_q{current_index}_item{i}",
+                    label_visibility="collapsed"
+                )
+                
+                if selected_answer != current_answer:
+                    user_answers[str(i)] = selected_answer
+                    answer_changed = True
     
     if answer_changed:
         st.session_state.user_answers[current_index] = user_answers.copy()
@@ -586,7 +631,10 @@ def display_matching_pbq(question):
     
     # Progress indicator
     total_items = len(matching_items)
-    answered_items = sum(1 for i in range(total_items) if user_answers.get(str(i)))
+    if is_multi_select:
+        answered_items = sum(1 for i in range(total_items) if user_answers.get(str(i)))
+    else:
+        answered_items = sum(1 for i in range(total_items) if user_answers.get(str(i)))
     
     if answered_items == total_items:
         st.success(f"✅ All {total_items} items answered!")
@@ -767,7 +815,17 @@ def render_question_navigation():
         
         if pbq_type == "Classification/Matching":
             matching_items = question.get('pbq_data', {}).get('matching_items', [])
-            all_answered = all(user_answer.get(str(i)) for i in range(len(matching_items)))
+            is_multi_select = question.get('pbq_data', {}).get('is_multi_select', False)
+            
+            if is_multi_select:
+                # For multi-select, check if each item has at least one answer
+                all_answered = all(
+                    user_answer.get(str(i)) and len(user_answer.get(str(i), [])) > 0 
+                    for i in range(len(matching_items))
+                )
+            else:
+                # For single select, check if all items have an answer
+                all_answered = all(user_answer.get(str(i)) for i in range(len(matching_items)))
         
         elif pbq_type == "Firewall Rules":
             firewall_rules = question.get('pbq_data', {}).get('firewall_rules', [])
@@ -815,6 +873,12 @@ def display_session_summary():
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
+        st.metric("Total Questions", total_questions)
+    with col2:
+        st.metric("Correct", score['correct'], delta=f"{score['accuracy']:.0f}%")
+    with col3:
+        st.metric("Incorrect", score['incorrect'])
+    with col4:
         st.metric("Accuracy", f"{score['accuracy']:.0f}%")
     
     # Performance feedback with 80% passing threshold
@@ -841,10 +905,20 @@ def display_session_summary():
             if q_type == "Classification/Matching":
                 # Display classification results
                 for item in result['items']:
-                    if item['is_correct']:
-                        st.success(f"**{item['number']}. Correct:** {item['user_answer']}")
+                    is_multi = item.get('is_multi_select', False)
+                    
+                    # Format answers for display
+                    if is_multi:
+                        user_ans_display = ', '.join(item['user_answer']) if isinstance(item['user_answer'], list) else item['user_answer']
+                        correct_ans_display = ', '.join(item['correct_answer']) if isinstance(item['correct_answer'], list) else item['correct_answer']
                     else:
-                        st.error(f"**{item['number']}. Wrong:** {item['user_answer']} | **Correct Answer:** {item['correct_answer']}")
+                        user_ans_display = item['user_answer']
+                        correct_ans_display = item['correct_answer']
+                    
+                    if item['is_correct']:
+                        st.success(f"**{item['number']}. Correct:** {user_ans_display}")
+                    else:
+                        st.error(f"**{item['number']}. Wrong:** {user_ans_display} | **Correct Answer:** {correct_ans_display}")
                     st.caption(f"*Description: {item['description']}*")
             
             elif q_type == "Firewall Rules":
@@ -899,6 +973,7 @@ def display_session_summary():
         st.session_state.detailed_results = []
         st.rerun()("Needs Improvement")
     
+ 
 
 # ============================================================================
 # PBQ BUILDER UI
@@ -942,6 +1017,16 @@ def render_matching_builder():
         key="matching_image"
     )
     
+    # NEW: Answer type selection
+    st.markdown("### Answer Type")
+    answer_type = st.radio(
+        "Select answer format:",
+        ["Single Select (One answer per item)", "Multi-Select (Multiple answers per item)"],
+        help="Single Select: Each item has ONE correct answer | Multi-Select: Each item can have MULTIPLE correct answers",
+        key="answer_type_radio"
+    )
+    is_multi_select = "Multi-Select" in answer_type
+    
     col1, col2 = st.columns(2)
     
     with col1:
@@ -972,18 +1057,43 @@ def render_matching_builder():
     
     for i, item in enumerate(items_list):
         st.markdown(f"**{i+1}.** {item}")
-        correct_answer = st.selectbox(
-            f"Correct match",
-            [""] + options_list,
-            key=f"matching_correct_{i}",
-            label_visibility="collapsed"
-        )
-        correct_answers[str(i)] = correct_answer
+        
+        if is_multi_select:
+            # Multi-select with checkboxes
+            st.write("Select all that apply:")
+            selected_options = []
+            
+            cols = st.columns(min(3, len(options_list)))
+            for idx, opt in enumerate(options_list):
+                col_idx = idx % len(cols)
+                with cols[col_idx]:
+                    if st.checkbox(opt, key=f"matching_multi_correct_{i}_{idx}"):
+                        selected_options.append(opt)
+            
+            correct_answers[str(i)] = selected_options
+            
+            if selected_options:
+                st.info(f"✓ Selected: {', '.join(selected_options)}")
+            else:
+                st.warning("⚠️ No answers selected")
+        else:
+            # Single select dropdown
+            correct_answer = st.selectbox(
+                f"Correct match",
+                [""] + options_list,
+                key=f"matching_correct_{i}",
+                label_visibility="collapsed"
+            )
+            correct_answers[str(i)] = correct_answer
     
     st.markdown("---")
     
     if st.button("💾 Save PBQ", type="primary", key="save_matching", use_container_width=True):
-        missing = [i+1 for i, item in enumerate(items_list) if not correct_answers.get(str(i))]
+        # Validation
+        if is_multi_select:
+            missing = [i+1 for i, item in enumerate(items_list) if not correct_answers.get(str(i))]
+        else:
+            missing = [i+1 for i, item in enumerate(items_list) if not correct_answers.get(str(i))]
         
         if missing:
             st.error(f"❌ Please set correct answers for items: {missing}")
@@ -996,8 +1106,7 @@ def render_matching_builder():
             "matching_items": items_list,
             "all_options": options_list,
             "correct_answers": correct_answers,
-            "question_type": "Single Select",
-            "is_multi_select": False
+            "is_multi_select": is_multi_select
         }
         
         save_pbq_question(pbq_data, "Classification/Matching")
@@ -1178,6 +1287,9 @@ def save_pbq_question(pbq_data: dict, pbq_type: str):
     if 'scenario_image' in pbq_data_clean:
         del pbq_data_clean['scenario_image']
     
+    # IMPORTANT: Keep is_multi_select flag
+    is_multi_select = pbq_data.get('is_multi_select', False)
+    
     # Create question format
     standard_question = {
         "type": f"PBQ - {pbq_type}",
@@ -1355,7 +1467,7 @@ def main():
     
     # Footer
     st.sidebar.markdown("---")
-    st.sidebar.caption("💡 Gambare! v2.0")
+    st.sidebar.caption("💡 PBQ Practice App v2.0")
     if SHOW_BUILDER:
         st.sidebar.caption("🛠️ Builder Mode: Active")
     else:
