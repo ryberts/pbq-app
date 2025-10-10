@@ -13,8 +13,8 @@ SHOW_BUILDER = True
 
 # Page configuration
 st.set_page_config(
-    page_title="PBQ Practice App",
-    page_icon="📚",
+    page_title="PBQ Time",
+    page_icon="👺",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -915,11 +915,23 @@ def display_session_summary():
                         user_ans_display = item['user_answer']
                         correct_ans_display = item['correct_answer']
                     
-                    if item['is_correct']:
-                        st.success(f"**{item['number']}. Correct:** {user_ans_display}")
-                    else:
-                        st.error(f"**{item['number']}. Wrong:** {user_ans_display} | **Correct Answer:** {correct_ans_display}")
-                    st.caption(f"*Description: {item['description']}*")
+                    # Create compact container with icon
+                    with st.container():
+                        if item['is_correct']:
+                            st.markdown(f"""
+                            <div style="background-color: #1e4d2b; padding: 8px 12px; border-radius: 4px; margin: 4px 0; max-width: 800px;">
+                                <strong>✓ {item['number']}. Correct:</strong> {user_ans_display}
+                            </div>
+                            """, unsafe_allow_html=True)
+                        else:
+                            st.markdown(f"""
+                            <div style="background-color: #4d1e1e; padding: 8px 12px; border-radius: 4px; margin: 4px 0; max-width: 800px;">
+                                <strong>✗ {item['number']}. Wrong:</strong> {user_ans_display}<br>
+                                <strong>Correct Answer:</strong> {correct_ans_display}
+                            </div>
+                            """, unsafe_allow_html=True)
+                        
+                        st.caption(f"*{item['description']}*")
             
             elif q_type == "Firewall Rules":
                 # Display firewall results
@@ -930,9 +942,21 @@ def display_session_summary():
                     row_score = row['row_score']
                     row_total = row['row_total']
                     
-                    st.markdown(f"### Rule {row_num}: {row_score}/{row_total} correct")
+                    # Compact header with icon
+                    if row_score == row_total:
+                        st.markdown(f"""
+                        <div style="background-color: #1e4d2b; padding: 8px 12px; border-radius: 4px; margin: 8px 0; max-width: 900px;">
+                            <strong>✓ Rule {row_num}:</strong> {row_score}/{row_total} correct - Perfect!
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""
+                        <div style="background-color: #4d1e1e; padding: 8px 12px; border-radius: 4px; margin: 8px 0; max-width: 900px;">
+                            <strong>✗ Rule {row_num}:</strong> {row_score}/{row_total} correct
+                        </div>
+                        """, unsafe_allow_html=True)
                     
-                    # User answer table
+                    # User answer table - compact
                     st.markdown("**Your Answer:**")
                     cols = st.columns(6)
                     headers = ["Rule #", "Source IP", "Dest IP", "Protocol", "Port", "Action"]
@@ -943,13 +967,21 @@ def display_session_summary():
                         is_correct = row['fields'][idx]['is_correct']
                         
                         with col:
-                            st.markdown(f"**{header}**")
+                            st.markdown(f"<small><strong>{header}</strong></small>", unsafe_allow_html=True)
                             if is_correct:
-                                st.success(f"{value}")
+                                st.markdown(f"""
+                                <div style="background-color: #1e4d2b; padding: 4px 8px; border-radius: 3px; text-align: center;">
+                                    ✓ {value}
+                                </div>
+                                """, unsafe_allow_html=True)
                             else:
-                                st.error(f"{value} ❌")
+                                st.markdown(f"""
+                                <div style="background-color: #4d1e1e; padding: 4px 8px; border-radius: 3px; text-align: center;">
+                                    ✗ {value}
+                                </div>
+                                """, unsafe_allow_html=True)
                     
-                    # Correct answer table
+                    # Correct answer table - compact
                     st.markdown("**Correct Answer:**")
                     cols = st.columns(6)
                     
@@ -958,10 +990,14 @@ def display_session_summary():
                         value = row['correct_row'].get(field_name, "")
                         
                         with col:
-                            st.markdown(f"**{header}**")
-                            st.info(f"{value}")
+                            st.markdown(f"<small><strong>{header}</strong></small>", unsafe_allow_html=True)
+                            st.markdown(f"""
+                            <div style="background-color: #1e3a4d; padding: 4px 8px; border-radius: 3px; text-align: center;">
+                                {value}
+                            </div>
+                            """, unsafe_allow_html=True)
                     
-                    st.markdown("---")
+                    st.markdown("<div style='margin: 12px 0; border-top: 1px solid #444;'></div>", unsafe_allow_html=True)
     
     st.markdown("---")
     
@@ -973,7 +1009,6 @@ def display_session_summary():
         st.session_state.detailed_results = []
         st.rerun()("Needs Improvement")
     
- 
 
 # ============================================================================
 # PBQ BUILDER UI
@@ -1437,7 +1472,7 @@ def main():
     initialize_session_state()
     
     # Sidebar navigation
-    st.sidebar.title("📚 PBQ Practice App")
+    st.sidebar.title("🛸 Yoshi, ikou!")
     st.sidebar.markdown("---")
     
     # Page selection based on SHOW_BUILDER flag
@@ -1467,7 +1502,7 @@ def main():
     
     # Footer
     st.sidebar.markdown("---")
-    st.sidebar.caption("💡 PBQ Practice App v2.0")
+    st.sidebar.caption("💡 Gambare! v2.0")
     if SHOW_BUILDER:
         st.sidebar.caption("🛠️ Builder Mode: Active")
     else:
