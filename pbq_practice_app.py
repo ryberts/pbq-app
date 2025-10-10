@@ -9,7 +9,7 @@ import random
 # ============================================================================
 
 # Set to False to hide PBQ Builder and Question Bank (public deployment mode)
-SHOW_BUILDER = True
+SHOW_BUILDER = False
 
 # Page configuration
 st.set_page_config(
@@ -94,10 +94,12 @@ def load_question_bank():
         file_path = 'data/question_bank.json'
         
         if not os.path.exists(file_path):
+            st.sidebar.warning("⚠️ Question bank file not found")
             return []
         
         file_size = os.path.getsize(file_path)
         if file_size == 0:
+            st.sidebar.warning("⚠️ Question bank file is empty")
             return []
         
         with open(file_path, 'r', encoding='utf-8') as f:
@@ -107,9 +109,15 @@ def load_question_bank():
                 return []
             
             data = json.loads(content)
+            
+            # Debug info in builder mode
+            if SHOW_BUILDER:
+                st.sidebar.success(f"✅ Loaded {len(data)} questions")
+            
             return data if isinstance(data, list) else []
                     
-    except Exception:
+    except Exception as e:
+        st.sidebar.error(f"❌ Error loading questions: {e}")
         return []
 
 # ============================================================================
@@ -119,8 +127,16 @@ def load_question_bank():
 def initialize_session_state():
     """Initialize all session state variables"""
     
+    # CRITICAL: Always load question bank first, regardless of mode
     if 'question_bank' not in st.session_state:
-        st.session_state.question_bank = load_question_bank()
+        loaded_questions = load_question_bank()
+        st.session_state.question_bank = loaded_questions
+        
+        # Show load status in sidebar
+        if loaded_questions:
+            st.sidebar.info(f"📚 {len(loaded_questions)} questions loaded")
+        elif SHOW_BUILDER:
+            st.sidebar.warning("📝 No questions found - Create some in PBQ Builder")
     
     session_vars = {
         'current_page': "Practice Mode",
@@ -654,7 +670,7 @@ def display_firewall_pbq(question):
         try:
             image_path = os.path.join('data/images', image_filename)
             if os.path.exists(image_path):
-                st.image(image_path, caption="Network Diagram", use_container_width=600)
+                st.image(image_path, caption="Network Diagram", use_container_width=500)
         except Exception:
             pass
     
@@ -1009,6 +1025,7 @@ def display_session_summary():
         st.session_state.detailed_results = []
         st.rerun()("Needs Improvement")
     
+
 
 # ============================================================================
 # PBQ BUILDER UI
@@ -1473,13 +1490,23 @@ def main():
     
     # Sidebar navigation
     st.sidebar.title("🛸 Yoshi, ikou!")
+    
+    # Show question bank status
+    question_count = len(st.session_state.question_bank)
+    if question_count > 0:
+        st.sidebar.metric("Questions Available", question_count)
+    else:
+        st.sidebar.warning("⚠️ No questions loaded")
+    
     st.sidebar.markdown("---")
     
     # Page selection based on SHOW_BUILDER flag
     if SHOW_BUILDER:
         page_options = ["Practice Mode", "PBQ Builder", "Question Bank"]
+        st.sidebar.info("🛠️ Admin Mode Active")
     else:
         page_options = ["Practice Mode"]
+        st.sidebar.success("👥 Public Mode Active")
     
     page = st.sidebar.radio(
         "Navigation",
@@ -1503,10 +1530,14 @@ def main():
     # Footer
     st.sidebar.markdown("---")
     st.sidebar.caption("💡 Gambare! v2.0")
+    
+    # File path info for debugging
     if SHOW_BUILDER:
-        st.sidebar.caption("🛠️ Builder Mode: Active")
-    else:
-        st.sidebar.caption("👥 Public Mode: Practice Only")
+        if os.path.exists('data/question_bank.json'):
+            file_size = os.path.getsize('data/question_bank.json')
+            st.sidebar.caption(f"📁 File: {file_size} bytes")
+        else:
+            st.sidebar.caption("📁 File: Not found")
 
 if __name__ == "__main__":
     main()
