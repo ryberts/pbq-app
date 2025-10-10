@@ -9,7 +9,7 @@ import random
 # ============================================================================
 
 # Set to False to hide PBQ Builder and Question Bank (public deployment mode)
-SHOW_BUILDER = False
+SHOW_BUILDER = True
 
 # Page configuration
 st.set_page_config(
@@ -423,7 +423,7 @@ def calculate_detailed_results():
 
 def render_practice_mode():
     """Render the practice mode interface"""
-    st.header("🎯 Practice Mode")
+    st.header("You Shall Pass!")
     
     if not st.session_state.question_bank:
         st.warning("⚠️ No questions available. Please add questions first.")
